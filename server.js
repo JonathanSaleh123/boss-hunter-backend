@@ -4,6 +4,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import { processPlayerTurn, processBossTurn } from './letta.js';
 
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -20,6 +21,7 @@ let players = [];
 const initialBossState = {
   name: 'Ancient Shadow Drake',
   description: 'A primordial beast of shadow and fury, awakened from a slumber of eons.',
+  imageUrl:'https://oaidalleapiprodscus.blob.core.windows.net/private/org-wjzyvmRjFIezvYsgRjuutE6i/user-hrHYhNiVUGGPGrx0EvJQka6T/img-RvWHtY1WimOJZUcUjccuJdze.png?st=2025-06-22T07%3A40%3A00Z&se=2025-06-22T09%3A40%3A00Z&sp=r&sv=2024-08-04&sr=b&rscd=inline&rsct=image/png&skoid=8b33a531-2df9-46a3-bc02-d4b1430a422c&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-06-21T09%3A33%3A25Z&ske=2025-06-22T09%3A33%3A25Z&sks=b&skv=2024-08-04&sig=47fhCy7Fg88VH%2BnXULWJUrn2zqsmwYWgjTaoJ1wLhds%3D',
   background_info: {
     backstory: 'This ancient drake was sealed away in an era long past. Its reawakening threatens to plunge the world into eternal twilight.',
     personality: 'Territorial & Destructive',
@@ -36,7 +38,6 @@ const initialBossState = {
   },
   health: 3500,
   maxHealth: 3500,
-  image: 'https://static.wikia.nocookie.net/honor-of-kings/images/8/80/Lu_Bu-circle-big.png/revision/latest?cb=20250203134757',
   isEnraged: false,
   phase: 1
 };
@@ -207,7 +208,6 @@ io.on('connection', (socket) => {
         health: character.game_stats.base_stats.general.max_health,
         maxHealth: character.game_stats.base_stats.general.max_health,
         class: character.background_info.personality,
-        image: `https://picsum.photos/200/300?random=${players.length + 1}`,
         isAlive: true
       };
       players.push(newPlayer);
