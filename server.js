@@ -18,6 +18,7 @@ const PORT = process.env.PORT || 3001;
 let players = [];
 
 // Store the initial boss state to make resetting easier
+// Store the initial boss state to make resetting easier
 const initialBossState = {
   name: 'Ancient Shadow Drake',
   description: 'A primordial beast of shadow and fury, awakened from a slumber of eons.',
@@ -34,7 +35,39 @@ const initialBossState = {
       advanced: { luck: 10, intelligence: 80, agility: 50, endurance: 100 },
       total_stat_points: 500
     },
-    abilities: ["Shadow Breath", "Tail Swipe", "Oblivion Curse"]
+    // Updated abilities to match the detailed Ability interface
+    abilities: [
+        {
+            name: "Umbral Shroud",
+            type: "Passive",
+            description: "Cloaked in shadows, the drake has a 20% chance to evade incoming attacks.",
+            cooldown: null
+        },
+        {
+            name: "Shadow Breath",
+            type: "Attack",
+            description: "Breathes a cone of pure shadow, dealing heavy damage to a single target.",
+            cooldown: 2
+        },
+        {
+            name: "Tail Swipe",
+            type: "Attack",
+            description: "A massive sweep of its tail, dealing moderate damage to all opponents.",
+            cooldown: 3
+        },
+        {
+            name: "Oblivion Curse",
+            type: "Debuff",
+            description: "Curses a target, reducing their defense by 30% for 3 turns.",
+            cooldown: 4
+        }
+    ],
+    // Added a status effects array
+    statusEffects: [
+        "Primordial Armor",
+        "Immune to Fear",
+        "Shadow Aura"
+    ]
   },
   health: 3500,
   maxHealth: 3500,

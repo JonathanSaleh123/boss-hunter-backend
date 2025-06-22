@@ -11,6 +11,7 @@
     "@letta-ai/letta-client": "^0.1.132",
     "dotenv": "^16.5.0",
     "express": "^4.19.2",
+    "groq-sdk": "^0.25.0",
     "socket.io": "^4.7.5"
   }
 }
