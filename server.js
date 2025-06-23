@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
-import { processPlayerTurn, processBossTurn } from './letta.js';
+import { processPlayerTurn, processBossTurn } from './ai-provider.js';
 
 
 const app = express();
@@ -22,7 +22,7 @@ let players = [];
 const initialBossState = {
   name: 'Ancient Shadow Drake',
   description: 'A primordial beast of shadow and fury, awakened from a slumber of eons.',
-  imageUrl:'https://oaidalleapiprodscus.blob.core.windows.net/private/org-wjzyvmRjFIezvYsgRjuutE6i/user-hrHYhNiVUGGPGrx0EvJQka6T/img-0UXwWkrcWTbfTc7PuRDmysAw.png?st=2025-06-22T18%3A42%3A50Z&se=2025-06-22T20%3A42%3A50Z&sp=r&sv=2024-08-04&sr=b&rscd=inline&rsct=image/png&skoid=8b33a531-2df9-46a3-bc02-d4b1430a422c&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-06-22T05%3A56%3A16Z&ske=2025-06-23T05%3A56%3A16Z&sks=b&skv=2024-08-04&sig=aOLc1sYp1qsY0XziGwv4dfDKuj//zUlMthoNe/ctCFI%3D',
+  imageUrl:'https://oaidalleapiprodscus.blob.core.windows.net/private/org-wjzyvmRjFIezvYsgRjuutE6i/user-hrHYhNiVUGGPGrx0EvJQka6T/img-5WBoy9QLzSHmXlbjtTLRBi1P.png?st=2025-06-22T20%3A15%3A33Z&se=2025-06-22T22%3A15%3A33Z&sp=r&sv=2024-08-04&sr=b&rscd=inline&rsct=image/png&skoid=8b33a531-2df9-46a3-bc02-d4b1430a422c&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-06-22T10%3A36%3A23Z&ske=2025-06-23T10%3A36%3A23Z&sks=b&skv=2024-08-04&sig=IGZanYRMK6qm6qKnu5vKoDhJ6zY%2BQIXkV%2Bjk67DlMy4%3D',
   background_info: {
     backstory: 'This ancient drake was sealed away in an era long past. Its reawakening threatens to plunge the world into eternal twilight.',
     personality: 'Territorial & Destructive',
