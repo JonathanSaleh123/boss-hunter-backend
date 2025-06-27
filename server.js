@@ -2,8 +2,16 @@ import 'dotenv/config';
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
+import cors from 'cors';
 import { processPlayerTurn, processBossTurn } from './ai-provider.js';
+import { connectDB } from './config/database.js';
+import userRoutes from './routes/users.js';
+import characterRoutes from './routes/characters.js';
+import battleRoutes from './routes/battles.js';
+import Battle from './models/Battle.js';
 
+// Connect to MongoDB
+connectDB();
 
 const app = express();
 const server = http.createServer(app);
@@ -14,8 +22,20 @@ const io = new Server(server, {
   }
 });
 
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// API Routes
+app.use('/api', userRoutes);
+app.use('/api', characterRoutes);
+app.use('/api', battleRoutes);
+
 const PORT = process.env.PORT || 3001;
 let players = [];
+let battleStartTime = null;
+let turnCount = 0;
+let battleLog = [];
 
 // Store the initial boss state to make resetting easier
 // Store the initial boss state to make resetting easier
@@ -94,10 +114,55 @@ const broadcastMessage = (message, type = 'system') => {
       timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
     };
     io.emit('new_message', newMsg);
+    
+    // Add to battle log
+    battleLog.push({
+      turn: turnCount,
+      action: message,
+      damage: 0,
+      target: 'all',
+      timestamp: new Date()
+    });
 };
 
 const broadcastGameState = () => {
     io.emit('update_game_state', { players, boss });
+};
+
+// Function to record battle end
+const recordBattleEnd = async (outcome) => {
+  try {
+    if (!battleStartTime) return;
+    
+    const duration = Math.floor((Date.now() - battleStartTime) / 1000);
+    
+    const participants = players.map(player => ({
+      characterId: player._id || null,
+      characterName: player.name,
+      playerEmail: player.email || 'unknown',
+      finalHealth: player.health,
+      survived: player.isAlive,
+      damageDealt: player.damageDealt || 0,
+      damageTaken: player.damageTaken || 0
+    }));
+
+    const battleData = {
+      participants,
+      bossName: boss.name,
+      bossHealth: boss.health,
+      outcome,
+      duration,
+      turnCount,
+      battleLog
+    };
+
+    const battle = new Battle(battleData);
+    await battle.save();
+    
+    console.log(`Battle recorded: ${outcome} - Duration: ${duration}s - Turns: ${turnCount}`);
+  } catch (error) {
+    console.error('Error recording battle:', error);
+  }
 };
 
 /**
@@ -105,6 +170,18 @@ const broadcastGameState = () => {
  */
 const resetGame = () => {
     console.log("GAME RESET: All players have left or were defeated. Resetting the boss.");
+    
+    // Record battle if it was in progress
+    if (battleStartTime && players.length > 0) {
+      const livingPlayers = players.filter(p => p.isAlive);
+      const outcome = livingPlayers.length === 0 ? 'defeat' : 'draw';
+      recordBattleEnd(outcome);
+    }
+    
+    // Reset battle tracking
+    battleStartTime = null;
+    turnCount = 0;
+    battleLog = [];
     
     // Reset boss to its initial state
     boss = { ...initialBossState };
@@ -137,6 +214,7 @@ const checkAllPlayersActed = () => {
 async function startPlayerAttackPhase() {
   if (gameState !== 'WAITING_FOR_ACTIONS') return;
   gameState = 'PLAYERS_ATTACKING';
+  turnCount++;
   io.emit('game_state_change', { state: gameState, timer: 0 });
 
   try {
@@ -153,6 +231,7 @@ async function startPlayerAttackPhase() {
   // Check if boss was defeated
   if (boss.health <= 0) {
       broadcastMessage("With a final, earth-shattering roar, the Ancient Shadow Drake has been vanquished! Victory!", 'system');
+      recordBattleEnd('victory');
       setTimeout(resetGame, 10000); // Reset the game after 10 seconds
       return;
   }
@@ -168,6 +247,7 @@ async function startBossAttackPhase() {
   // MODIFIED: If all players are defeated, reset the game.
   if (livingPlayers.length === 0) {
       broadcastMessage("The Shadow Drake roars in victory over the fallen heroes. The world is plunged into twilight...", 'boss');
+      recordBattleEnd('defeat');
       setTimeout(resetGame, 10000); // Reset the game after 10 seconds
       return;
   }
@@ -241,7 +321,9 @@ io.on('connection', (socket) => {
         health: character.game_stats.base_stats.general.max_health,
         maxHealth: character.game_stats.base_stats.general.max_health,
         class: character.background_info.personality,
-        isAlive: true
+        isAlive: true,
+        damageDealt: 0,
+        damageTaken: 0
       };
       players.push(newPlayer);
   
@@ -253,6 +335,9 @@ io.on('connection', (socket) => {
     socket.on('start_game', () => {
         if(gameState === 'IDLE' && players.length > 0) {
             console.log(`Game started by ${socket.id}`);
+            battleStartTime = Date.now();
+            turnCount = 0;
+            battleLog = [];
             broadcastMessage('The battle begins!', 'system');
             startWaitingPhase();
         }
